@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Recetas App</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">Recetas App</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Inicio</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logout">Cerrar Sesión</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Mi Perfil</h4>
+                        <form id="perfil-form">
+                            <div class="form-group">
+                                <label for="nombre">Nombre</label>
+                                <input type="text" class="form-control" id="nombre" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Actualizar Perfil</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <h4>Mis Recetas</h4>
+                <div id="mis-recetas" class="row"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/recetas.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!Auth.isAuthenticated()) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+
+            const usuario = Auth.getUsuario();
+            document.getElementById('nombre').value = usuario.nombre;
+            document.getElementById('email').value = usuario.email;
+
+            // Cargar recetas del usuario
+            const recetas = await RecetasService.getRecetas({ id_usuario: usuario.id });
+            const misRecetasDiv = document.getElementById('mis-recetas');
+            misRecetasDiv.innerHTML = recetas.map(receta => renderReceta(receta)).join('');
+        });
+
+        document.getElementById('perfil-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const usuario = Auth.getUsuario();
+                const userData = {
+                    nombre: document.getElementById('nombre').value,
+                    email: document.getElementById('email').value
+                };
+
+                await fetchAPI(`/usuarios/${usuario.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(userData)
+                });
+
+                localStorage.setItem('usuario', JSON.stringify({
+                    ...usuario,
+                    ...userData
+                }));
+
+                showAlert('Perfil actualizado exitosamente', 'success');
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            }
+        });
+    </script>
+</body>
+</html> 
